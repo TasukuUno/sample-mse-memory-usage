@@ -1,0 +1,23 @@
+{
+  "name": "sample-mse-memory-usage",
+  "version": "1.0.0",
+  "description": "minimal sample to investigate unexpected increase memory with Media Source Extensions",
+  "main": "index.html",
+  "scripts": {
+    "start": "http-server -p 8080 ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TasukuUno/sample-mse-memory-usage.git"
+  },
+  "author": "TasukuUno",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TasukuUno/sample-mse-memory-usage/issues"
+  },
+  "homepage": "https://github.com/TasukuUno/sample-mse-memory-usage#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "http-server": "^0.10.0"
+  }
+}
