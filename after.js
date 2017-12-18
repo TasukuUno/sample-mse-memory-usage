@@ -32,13 +32,13 @@
 
     isLoading = true;
 
-    resetMSE();
-
-    if (!REUSE_DATA) {
-      resetData();
-    }
-
-    loadData()
+    resetMSE()
+      .then(() => {
+        if (!REUSE_DATA) {
+          resetData();
+        }
+      })
+      .then(() => loadData())
       .then(() => {
         startAudioPlayback();
         document.title = ++count;
@@ -185,45 +185,62 @@
   }
 
   // reset all of elements about Audio Playback
-  // TODO: This does not work well.
+  // NOTE: Rewrite to async to wait for the buffer to be removed.
   function resetMSE() {
-    if (sourceBuffer && sourceBuffer.updating) {
-      sourceBuffer.abort();
-      console.log('sourceBuffer.abort()');
-    }
+    return new Promise(resolve => {
+      if (sourceBuffer && sourceBuffer.updating) {
+        sourceBuffer.abort();
+        console.log('sourceBuffer.abort()');
+      }
 
-    if (audioElement) {
-      audioElement.removeEventListener('timeupdate', onTimeupdate);
-      audioElement.pause();
-      console.log('reset audioElement');
-    }
+      if (audioElement) {
+        audioElement.removeEventListener('timeupdate', onTimeupdate);
+        audioElement.pause();
+        console.log('reset audioElement');
+      }
 
-    if (sourceBuffer) {
-      sourceBuffer.removeEventListener('updateend', onUpdateEnd);
-      sourceBuffer.remove(timeRange.start, timeRange.end);
-      console.log('remove sourceBuffer');
-    }
+      if (sourceBuffer) {
+        sourceBuffer.removeEventListener('updateend', onUpdateEnd);
+        sourceBuffer.addEventListener('updateend', onBufferRemoved);
+        sourceBuffer.remove(timeRange.start, timeRange.end);
+        console.log('will remove sourceBuffer');
+      }
 
-    if (mediaSource) {
-      mediaSource.removeEventListener('sourceopen', onSourceopen);
-      mediaSource.removeSourceBuffer(sourceBuffer);
-      mediaSource.endOfStream();
-      console.log('remove mediaSource');
-    }
+      if (mediaSource) {
+        mediaSource.removeEventListener('sourceopen', onSourceopen);
+      }
 
-    if (audioElement && objectURL) {
-      URL.revokeObjectURL(objectURL);
-      delete audioElement.src;
-      audioElement.remove();
-      console.log('remove audioElement');
-    }
+      if (!sourceBuffer) {
+        resolve();
+      }
 
-    audioElement = null;
-    mediaSource = null;
-    objectURL = null;
-    sourceBuffer = null;
-    loadIndex = 0;
-    timeRange = { start: 0, end: 0 };
+      function onBufferRemoved() {
+        console.log('removed sourceBuffer');
+        sourceBuffer.removeEventListener('updateend', onBufferRemoved);
+        resolve();
+      }
+    })
+    .then(() => {
+      if (mediaSource) {
+        mediaSource.removeSourceBuffer(sourceBuffer);
+        mediaSource.endOfStream();
+        console.log('remove mediaSource');
+      }
+
+      if (audioElement && objectURL) {
+        URL.revokeObjectURL(objectURL);
+        delete audioElement.src;
+        audioElement.remove();
+        console.log('remove audioElement');
+      }
+
+      audioElement = null;
+      mediaSource = null;
+      objectURL = null;
+      sourceBuffer = null;
+      loadIndex = 0;
+      timeRange = { start: 0, end: 0 };
+    });
   }
 
 })();
